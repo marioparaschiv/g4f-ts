@@ -10,7 +10,8 @@
   },
   "scripts": {
     "build": "tsup",
-    "test": "jest"
+    "test": "jest",
+    "prepare": "tsup"
   },
   "keywords": [
     "gpt4free",
