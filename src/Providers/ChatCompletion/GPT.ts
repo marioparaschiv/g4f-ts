@@ -35,19 +35,41 @@ class GPT {
             'Content-Type': 'application/json'
         }
           
-        const data = {
+        const requestData = {
             messages,
             "prompt": messages[messages.length - 1].content,
-            model: options?.model || "gpt-4",
+            model: options?.model || "GPT-4",
             markdown: options?.markdown || false
         };
         
-        return axios.post(this.url, data, {
+        // Init conversation session
+        const initRequest = await axios.post(this.url, requestData, {
             headers: headers, proxy: createProxyConfig(options?.proxy),
             responseType: options?.stream ? 'stream' : 'text'
-        }).then(async response => {
-            return handleStream({ data: response.data, name: this.name }, options?.stream || false, this.handleResponse.bind(this));       
         })
+
+        // Start conversation generating data with session id
+        let id = JSON.parse(initRequest.data).id;
+        let response = null;
+        let data = true;
+        while(data){
+            response = await axios.get('https://nexra.aryahcr.cc/api/chat/task/' + encodeURIComponent(id));
+            response = response.data;
+            
+            switch(response.status){
+                case "pending":
+                    data = true;
+                    break;
+                case "error":
+                case "completed":
+                    return response
+                case "not_found":
+                    data = false;
+                    break;
+            }
+        }
+
+        return handleStream({ data:response, name: this.name }, options?.stream || false, this.handleResponse.bind(this));
     }
 
     handleResponse(text:any) {
